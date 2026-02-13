@@ -33,9 +33,12 @@
             .no-print { display: none !important; }
             .print-only { display: block !important; }
             body { background: white !important; color: black; }
-            .print-container { padding: 20px; width: 100%; }
+            .print-container { padding: 0; width: 100%; }
             table { width: 100%; border-collapse: collapse; }
             th, td { border: 1px solid black; padding: 8px; }
+            
+            /* Break page for bulk printing if needed */
+            .page-break { page-break-after: always; }
         }
         .print-only { display: none; }
         
@@ -71,7 +74,7 @@
         ];
 
         const DEFAULT_TEACHERS = [
-            { id: 1, name: 'Bpk. Budi Santoso', username: 'guru1', password: '123' }
+            { id: 1, name: 'Bpk. Budi Santoso', username: 'guru1', password: '123', photo: null }
         ];
 
         const DEFAULT_STUDENTS = [
@@ -156,14 +159,28 @@
             const [newExam, setNewExam] = useState({ subject: '', className: '', date: '', start: '', end: '', academicYear: settings.currentAcademicYear });
             const [newQuestion, setNewQuestion] = useState({ type: 'multiple_choice', question: '', options: ['', '', '', ''], correctAnswer: '', points: 10 });
 
+            // Photo Upload Handler
+            const handlePhotoUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const newPhoto = reader.result;
+                        const updatedTeachers = teachers.map(t => t.id === user.id ? { ...t, photo: newPhoto } : t);
+                        setTeachers(updatedTeachers);
+                        setUser({ ...user, photo: newPhoto });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
             const createExam = () => {
-                // Validation including className
                 if(!newExam.subject || !newExam.className || !newExam.date || !newExam.start || !newExam.end) return alert("Lengkapi data jadwal (termasuk kelas).");
                 const examPacket = {
                     id: Date.now(),
                     category: activeTab,
                     subject: newExam.subject,
-                    className: newExam.className, // Save Class Name
+                    className: newExam.className, 
                     teacher: user.name,
                     date: newExam.date,
                     start: newExam.start,
@@ -206,11 +223,21 @@
             return (
                 <div className="min-h-screen flex bg-gray-50">
                      <div className="w-64 bg-teal-800 text-white flex flex-col shadow-xl fixed h-full overflow-y-auto no-print z-20">
-                        <div className="p-6 text-center border-b border-teal-700">
-                            <h2 className="text-xl font-bold">Panel Guru</h2>
-                            <p className="text-teal-200 text-xs mt-1">{user.name}</p>
+                        <div className="p-6 text-center border-b border-teal-700 flex flex-col items-center">
+                            <div className="w-20 h-20 rounded-full bg-teal-600 mb-3 border-4 border-teal-500 overflow-hidden flex items-center justify-center">
+                                {user.photo ? (
+                                    <img src={user.photo} alt="Profil" className="w-full h-full object-cover" />
+                                ) : (
+                                    <i className="fas fa-user text-4xl text-teal-300"></i>
+                                )}
+                            </div>
+                            <h2 className="text-lg font-bold">{user.name}</h2>
+                            <p className="text-teal-300 text-xs">Guru</p>
                         </div>
                         <nav className="flex-grow p-4 space-y-2">
+                            <button onClick={() => setActiveTab('profile')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'profile' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}>
+                                <i className="fas fa-user-circle w-6"></i> Profil Saya
+                            </button>
                             <button onClick={() => setActiveTab('pts')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'pts' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}>
                                 <i className="fas fa-file-alt w-6"></i> PTS
                             </button>
@@ -222,11 +249,6 @@
                             </button>
                         </nav>
                         <div className="p-4 border-t border-teal-700 space-y-2">
-                            <div className="bg-teal-900 p-2 rounded">
-                                <label className="text-xs text-teal-300 block">Ganti Password</label>
-                                <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} className="w-full text-black text-xs p-1 rounded mt-1" placeholder="Password Baru" />
-                                <button onClick={changePassword} className="w-full bg-teal-500 text-xs mt-1 py-1 rounded hover:bg-teal-400">Simpan</button>
-                            </div>
                             <button onClick={handleLogout} className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded flex items-center justify-center gap-2 transition">
                                 <i className="fas fa-sign-out-alt"></i> Keluar
                             </button>
@@ -234,6 +256,38 @@
                     </div>
 
                     <div className="flex-grow p-8 ml-64 overflow-y-auto min-h-screen">
+                        
+                        {activeTab === 'profile' && (
+                            <div className="space-y-6 fade-in no-print">
+                                <h2 className="text-2xl font-bold text-gray-800 border-b pb-2">Profil Guru</h2>
+                                <div className="bg-white p-6 rounded-lg shadow-sm border max-w-2xl">
+                                    <div className="flex items-center gap-6 mb-6">
+                                        <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 border-2 border-teal-500">
+                                            {user.photo ? (
+                                                <img src={user.photo} alt="Profil" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-400"><i className="fas fa-user text-4xl"></i></div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold">{user.name}</h3>
+                                            <p className="text-gray-500">Username: {user.username}</p>
+                                            <label className="block mt-3">
+                                                <span className="bg-teal-600 text-white text-xs px-3 py-1 rounded cursor-pointer hover:bg-teal-700">Upload Foto</span>
+                                                <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <hr className="my-4"/>
+                                    <h4 className="font-bold text-gray-700 mb-2">Ganti Password</h4>
+                                    <div className="flex gap-2">
+                                        <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} className="border p-2 rounded w-full" placeholder="Password Baru" />
+                                        <button onClick={changePassword} className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Simpan</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {(activeTab === 'pts' || activeTab === 'pas') && (
                             <div className="space-y-8 fade-in no-print">
                                 <h2 className="text-2xl font-bold text-gray-800 border-b pb-2 uppercase">Kelola {activeTab}</h2>
@@ -334,7 +388,7 @@
                             </div>
                         )}
 
-                        {activeTab === 'results' && <ResultsView results={results} teacherFilter={user.name} settings={settings} />}
+                        {activeTab === 'results' && <ResultsView results={results} exams={exams} teacherFilter={user.name} settings={settings} />}
                     </div>
                 </div>
             );
@@ -395,7 +449,8 @@
                                 id: Date.now() + idx,
                                 name: parts[0]?.trim(),
                                 username: parts[1]?.trim(),
-                                password: parts[2]?.trim()
+                                password: parts[2]?.trim(),
+                                photo: null // Default null for imported teachers
                             };
                         }
                         return null;
@@ -566,20 +621,98 @@
                             </div>
                         )}
 
-                        {activeTab === 'results' && <ResultsView results={results} settings={settings} />}
+                        {activeTab === 'results' && <ResultsView results={results} exams={exams} settings={settings} />}
                     </div>
                 </div>
             );
         };
 
-        const ResultsView = ({ results, teacherFilter = null, settings }) => {
+        const ResultsView = ({ results, exams, teacherFilter = null, settings }) => {
             const [filterCategory, setFilterCategory] = useState('all');
+            const [viewMode, setViewMode] = useState('table'); // table, detail
+            const [selectedResult, setSelectedResult] = useState(null);
+
             const filteredResults = results.filter(r => {
                 const matchTeacher = teacherFilter ? r.teacher === teacherFilter : true;
                 const matchCat = filterCategory === 'all' ? true : r.category === filterCategory;
                 const matchYear = r.academicYear === settings.currentAcademicYear; 
                 return matchTeacher && matchCat && matchYear;
             });
+
+            // Find full exam data for detail view
+            const selectedExam = selectedResult ? exams.find(e => e.id === selectedResult.examId) : null;
+
+            if (viewMode === 'detail' && selectedResult && selectedExam) {
+                return (
+                    <div className="space-in fade-in">
+                        <div className="flex justify-between items-center mb-6 no-print">
+                            <button onClick={() => setViewMode('table')} className="bg-white border px-4 py-2 rounded shadow hover:bg-gray-100 flex items-center gap-2">
+                                <i className="fas fa-arrow-left"></i> Kembali
+                            </button>
+                            <button onClick={() => window.print()} className="bg-indigo-600 text-white px-4 py-2 rounded shadow flex items-center gap-2">
+                                <i className="fas fa-print"></i> Cetak Lembar Siswa
+                            </button>
+                        </div>
+
+                        {/* Lembar Jawaban Siswa - Print Friendly */}
+                        <div className="bg-white p-8 rounded-lg shadow print-container">
+                            <div className="text-center mb-6 border-b pb-4">
+                                <h1 className="text-2xl font-bold uppercase">{settings.appName}</h1>
+                                <h2 className="text-xl font-bold uppercase">Lembar Hasil Ujian {selectedResult.category}</h2>
+                                <p>Tahun Akademik: {selectedResult.academicYear}</p>
+                            </div>
+                            
+                            <table className="w-full mb-6 text-sm">
+                                <tbody>
+                                    <tr><td className="font-bold w-32 py-1">Nama Siswa</td><td>: {selectedResult.studentName}</td></tr>
+                                    <tr><td className="font-bold py-1">NIS</td><td>: {selectedResult.nim}</td></tr>
+                                    <tr><td className="font-bold py-1">Mata Pelajaran</td><td>: {selectedResult.subject}</td></tr>
+                                    <tr><td className="font-bold py-1">Kelas</td><td>: {selectedExam.className}</td></tr>
+                                    <tr><td className="font-bold py-1">Nilai (PG)</td><td>: <span className="font-bold text-lg">{selectedResult.score}</span></td></tr>
+                                </tbody>
+                            </table>
+
+                            <div className="space-y-4">
+                                <h3 className="font-bold border-b pb-1 mb-3">Detail Jawaban</h3>
+                                {selectedExam.questions.map((q, idx) => {
+                                    const studentAns = selectedResult.essayAnswers[q.id] || selectedResult.essayAnswers[q.question]; // Compatibility
+                                    // For PG, we might need to look into a different structure if we saved pg answers. 
+                                    // Current implementation only saved essay answers in 'essayAnswers'. 
+                                    // To make this fully work for PG review, we need to save all answers.
+                                    // *Assuming future update saves all answers in a unified object, currently trying to display what's available*
+                                    
+                                    // NOTE: The previous ExamRunner implementation only passed `essayAnswers` for non-PG. 
+                                    // To fully implement "Print Answers", we'd need to save PG answers too. 
+                                    // For now, this will display Essay answers.
+                                    
+                                    return (
+                                        <div key={q.id} className="mb-4 break-inside-avoid">
+                                            <div className="flex gap-2">
+                                                <span className="font-bold">{idx + 1}.</span>
+                                                <div className="flex-1">
+                                                    <p className="mb-1">{q.question}</p>
+                                                    {q.type === 'multiple_choice' ? (
+                                                        <div className="text-sm text-gray-600 ml-4">
+                                                            <p>Tipe: Pilihan Ganda</p>
+                                                            <p>Kunci Jawaban: <b>{q.correctAnswer}</b></p>
+                                                            {/* If we had student answer for PG stored, we would show it here */}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="bg-gray-50 p-3 rounded border mt-2">
+                                                            <p className="text-xs font-bold text-gray-500">Jawaban Siswa:</p>
+                                                            <p>{studentAns || '-'}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
 
             return (
                 <div className="space-in fade-in">
@@ -591,7 +724,7 @@
                                 <option value="pts">PTS</option>
                                 <option value="pas">PAS</option>
                             </select>
-                            <button onClick={() => window.print()} className="bg-indigo-600 text-white px-4 py-2 rounded shadow flex items-center gap-2"><i className="fas fa-print"></i> Cetak</button>
+                            <button onClick={() => window.print()} className="bg-indigo-600 text-white px-4 py-2 rounded shadow flex items-center gap-2"><i className="fas fa-print"></i> Cetak Rekap</button>
                         </div>
                     </div>
                     <div className="print-only text-center mb-8">
@@ -606,7 +739,8 @@
                                 <tr>
                                     <th className="p-3 border">Nama Siswa</th><th className="p-3 border">NIS</th><th className="p-3 border">Mapel</th>
                                     {!teacherFilter && <th className="p-3 border">Guru</th>}
-                                    <th className="p-3 border">Nilai</th><th className="p-3 border">Waktu</th>
+                                    <th className="p-3 border">Nilai</th>
+                                    <th className="p-3 border no-print">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
@@ -616,7 +750,14 @@
                                         <td className="p-3 border font-bold">{res.subject}</td>
                                         {!teacherFilter && <td className="p-3 border">{res.teacher}</td>}
                                         <td className="p-3 border font-bold text-green-600">{res.score}</td>
-                                        <td className="p-3 border text-xs">{res.timestamp}</td>
+                                        <td className="p-3 border text-center no-print">
+                                            <button 
+                                                onClick={() => { setSelectedResult(res); setViewMode('detail'); }} 
+                                                className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs hover:bg-blue-200"
+                                            >
+                                                <i className="fas fa-eye"></i> Detail & Cetak
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -691,12 +832,14 @@
             const submitExam = (auto = false) => {
                 if(!auto && !confirm("Yakin ingin menyelesaikan ujian?")) return;
                 let score = 0;
-                let essayAnswers = {};
+                let essayAnswers = {}; // We will store ALL answers here for detail view
+                
                 exam.questions.forEach(q => {
+                    // Save answer for both types
+                    essayAnswers[q.id] = answers[q.id] || '(Kosong)';
+
                     if (q.type === 'multiple_choice') {
                         if (answers[q.id] === q.correctAnswer) score += parseInt(q.points);
-                    } else {
-                        essayAnswers[q.question] = answers[q.id] || '(Kosong)';
                     }
                 });
                 
