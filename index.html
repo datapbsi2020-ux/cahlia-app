@@ -152,15 +152,18 @@
 
             const myExams = exams.filter(e => e.teacher === user.name && e.category === activeTab);
             
-            const [newExam, setNewExam] = useState({ subject: '', date: '', start: '', end: '', academicYear: settings.currentAcademicYear });
+            // Added className to state
+            const [newExam, setNewExam] = useState({ subject: '', className: '', date: '', start: '', end: '', academicYear: settings.currentAcademicYear });
             const [newQuestion, setNewQuestion] = useState({ type: 'multiple_choice', question: '', options: ['', '', '', ''], correctAnswer: '', points: 10 });
 
             const createExam = () => {
-                if(!newExam.subject || !newExam.date || !newExam.start || !newExam.end) return alert("Lengkapi data jadwal.");
+                // Validation including className
+                if(!newExam.subject || !newExam.className || !newExam.date || !newExam.start || !newExam.end) return alert("Lengkapi data jadwal (termasuk kelas).");
                 const examPacket = {
                     id: Date.now(),
                     category: activeTab,
                     subject: newExam.subject,
+                    className: newExam.className, // Save Class Name
                     teacher: user.name,
                     date: newExam.date,
                     start: newExam.start,
@@ -169,7 +172,7 @@
                     questions: []
                 };
                 setExams([...exams, examPacket]);
-                setNewExam({ ...newExam, subject: '', date: '', start: '', end: '' });
+                setNewExam({ ...newExam, subject: '', className: '', date: '', start: '', end: '' });
                 alert("Jadwal berhasil dibuat.");
             };
 
@@ -240,7 +243,11 @@
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="text-xs font-bold text-gray-500">Mata Pelajaran</label>
-                                            <input className="border p-2 rounded w-full" value={newExam.subject} onChange={e => setNewExam({...newExam, subject: e.target.value})} />
+                                            <input className="border p-2 rounded w-full" value={newExam.subject} onChange={e => setNewExam({...newExam, subject: e.target.value})} placeholder="Contoh: IPA" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500">Target Kelas</label>
+                                            <input className="border p-2 rounded w-full" value={newExam.className} onChange={e => setNewExam({...newExam, className: e.target.value})} placeholder="Contoh: 9A, 7B" />
                                         </div>
                                         <div>
                                             <label className="text-xs font-bold text-gray-500">Tahun Akademik</label>
@@ -271,8 +278,8 @@
                                         <div key={exam.id} className={`bg-white border rounded-xl overflow-hidden shadow-sm ${editingExamId === exam.id ? 'ring-2 ring-teal-500' : ''}`}>
                                             <div className="p-4 bg-gray-50 flex justify-between items-center">
                                                 <div>
-                                                    <h3 className="font-bold text-lg">{exam.subject} <span className="text-xs bg-gray-200 px-2 rounded ml-2">{exam.academicYear}</span></h3>
-                                                    <p className="text-xs text-gray-500">{exam.date} | {exam.start} - {exam.end}</p>
+                                                    <h3 className="font-bold text-lg">{exam.subject} <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded ml-2">Kelas {exam.className}</span></h3>
+                                                    <p className="text-xs text-gray-500 mt-1">{exam.date} | {exam.start} - {exam.end}</p>
                                                     <span className="text-xs font-bold text-blue-600">{exam.questions.length} Soal</span>
                                                 </div>
                                                 <div className="flex gap-2">
@@ -865,7 +872,15 @@
             };
 
             const activeExamData = exams.find(e => e.id === selectedExamId);
-            const filteredExams = exams.filter(e => e.category === selectedCategory && e.academicYear === settings.currentAcademicYear);
+            
+            // Filter logic updated to include Class Check
+            const filteredExams = exams.filter(e => {
+                const matchCategory = e.category === selectedCategory;
+                const matchYear = e.academicYear === settings.currentAcademicYear;
+                // Match class or show if no class set (backward compatibility)
+                const matchClass = e.className === user.className || !e.className; 
+                return matchCategory && matchYear && matchClass;
+            });
 
             if (activeScreen === 'menu') return (
                 <div className="min-h-screen bg-gray-100 p-4">
@@ -909,7 +924,7 @@
                             <div><h1 className="text-2xl font-bold">Daftar Ujian {selectedCategory.toUpperCase()}</h1></div>
                         </header>
                         <div className="space-y-4">
-                            {filteredExams.length === 0 ? <p className="text-center text-gray-500">Belum ada jadwal.</p> : filteredExams.map(exam => (
+                            {filteredExams.length === 0 ? <p className="text-center text-gray-500">Belum ada jadwal untuk kelas Anda.</p> : filteredExams.map(exam => (
                                 <div key={exam.id} className="bg-white p-5 rounded-xl shadow-sm border hover:shadow-md transition">
                                     <div className="flex justify-between items-start">
                                         <div>
