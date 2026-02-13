@@ -148,10 +148,7 @@
         const TeacherDashboard = ({ user, setUser, teachers, setTeachers, exams, setExams, results, handleLogout, settings }) => {
             const [activeTab, setActiveTab] = useState('pts');
             const [editingExamId, setEditingExamId] = useState(null);
-            
-            // Password Change State
             const [newPass, setNewPass] = useState('');
-            const [showProfile, setShowProfile] = useState(false);
 
             const myExams = exams.filter(e => e.teacher === user.name && e.category === activeTab);
             
@@ -180,12 +177,11 @@
                 if(!newPass) return alert("Password tidak boleh kosong");
                 const updatedTeachers = teachers.map(t => t.id === user.id ? { ...t, password: newPass } : t);
                 setTeachers(updatedTeachers);
-                setUser({ ...user, password: newPass }); // Update session
+                setUser({ ...user, password: newPass });
                 alert("Password berhasil diubah");
                 setNewPass('');
             };
 
-            // Question Logic (Same as before)
             const deleteExam = (id) => { if(confirm("Hapus ujian ini?")) setExams(exams.filter(e => e.id !== id)); };
             const addQuestionToExam = () => {
                 if(!editingExamId || !newQuestion.question) return;
@@ -289,7 +285,6 @@
 
                                             {editingExamId === exam.id && (
                                                 <div className="p-6 border-t bg-white">
-                                                    {/* Question Input Form (Same as previous) */}
                                                     <div className="bg-teal-50 p-4 rounded-lg mb-6 border border-teal-100">
                                                         <div className="flex gap-4 mb-3">
                                                             <select className="border p-2 rounded" value={newQuestion.type} onChange={e => setNewQuestion({...newQuestion, type: e.target.value})}>
@@ -353,7 +348,7 @@
             const [newTeacher, setNewTeacher] = useState({ name: '', username: '', password: '' });
             const [importText, setImportText] = useState('');
             const [showImport, setShowImport] = useState(false);
-            const [importMode, setImportMode] = useState('student'); // 'student' or 'teacher'
+            const [importMode, setImportMode] = useState('student'); 
 
             // --- SETTINGS LOGIC ---
             const updateSettings = (key, val) => setSettings({ ...settings, [key]: val });
@@ -364,17 +359,16 @@
                 let count = 0;
                 
                 if (importMode === 'student') {
-                    // Format: Nama | NIS | Username | Password | Kelas | Mapel
                     const imported = lines.map((line, idx) => {
                         let parts = line.split('\t');
-                        if (parts.length < 3) parts = line.split(','); // Fallback CSV
+                        if (parts.length < 3) parts = line.split(','); 
                         if (parts.length >= 3) {
                             return { 
                                 id: Date.now() + idx, 
                                 name: parts[0]?.trim(), 
                                 nim: parts[1]?.trim(), 
                                 username: parts[2]?.trim(), 
-                                password: parts[3]?.trim() || parts[1]?.trim(), // Default pass = NIS
+                                password: parts[3]?.trim() || parts[1]?.trim(), 
                                 className: parts[4]?.trim() || '-',
                                 subject: parts[5]?.trim() || '-'
                             };
@@ -386,7 +380,6 @@
                         count = imported.length;
                     }
                 } else {
-                    // Teacher Import: Nama | Username | Password
                     const imported = lines.map((line, idx) => {
                         let parts = line.split('\t');
                         if (parts.length < 3) parts = line.split(',');
@@ -421,10 +414,8 @@
                 setNewTeacher({ name: '', username: '', password: '' });
             };
 
-            // Generic Delete
             const deleteItem = (setList, list, id) => setList(list.filter(item => item.id !== id));
             
-            // Edit Teacher Logic
             const updateTeacher = (id, field, val) => {
                 setTeachers(teachers.map(t => t.id === id ? { ...t, [field]: val } : t));
             };
@@ -458,8 +449,6 @@
                     </div>
 
                     <div className="flex-grow p-8 ml-64 overflow-y-auto min-h-screen">
-                        
-                        {/* TAB PENGATURAN */}
                         {activeTab === 'settings' && (
                             <div className="space-y-6 fade-in no-print">
                                 <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Pengaturan Aplikasi</h2>
@@ -471,7 +460,6 @@
                                     <div>
                                         <label className="block text-sm font-bold text-gray-600 mb-1">URL Gambar Latar Belakang</label>
                                         <input className="w-full border p-2 rounded" value={settings.appBg} onChange={e => updateSettings('appBg', e.target.value)} placeholder="https://example.com/image.jpg" />
-                                        <p className="text-xs text-gray-500 mt-1">Biarkan kosong untuk latar default.</p>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-600 mb-1">Periode Akademik Aktif (Backup/Filter)</label>
@@ -486,7 +474,6 @@
                             </div>
                         )}
 
-                        {/* TAB DATA SISWA */}
                         {activeTab === 'students' && (
                             <div className="space-y-6 fade-in no-print">
                                 <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Manajemen Data Siswa</h2>
@@ -504,7 +491,6 @@
                                         <button onClick={() => { setImportMode('student'); setShowImport(!showImport); }} className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700"><i className="fas fa-file-excel"></i> Import Excel</button>
                                     </div>
                                 </div>
-                                
                                 {showImport && importMode === 'student' && (
                                     <div className="bg-green-50 p-4 rounded border border-green-200">
                                         <p className="text-xs font-bold text-green-800 mb-2">Format: Nama | NIS | Username | Password | Kelas | Mapel</p>
@@ -512,7 +498,6 @@
                                         <button onClick={handleImport} className="bg-green-700 text-white px-4 py-1 rounded text-sm mt-2">Proses Import</button>
                                     </div>
                                 )}
-
                                 <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-slate-100 uppercase font-bold">
@@ -535,7 +520,6 @@
                             </div>
                         )}
 
-                        {/* TAB DATA GURU */}
                         {activeTab === 'teachers' && (
                             <div className="space-y-6 fade-in no-print">
                                 <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Manajemen Data Guru</h2>
@@ -546,7 +530,6 @@
                                     <button onClick={addTeacher} className="bg-blue-600 text-white px-4 py-2 rounded text-sm">Tambah</button>
                                     <button onClick={() => { setImportMode('teacher'); setShowImport(!showImport); }} className="bg-green-600 text-white px-4 py-2 rounded text-sm"><i className="fas fa-file-excel"></i> Import</button>
                                 </div>
-
                                 {showImport && importMode === 'teacher' && (
                                     <div className="bg-green-50 p-4 rounded border border-green-200 mb-4">
                                         <p className="text-xs font-bold text-green-800 mb-2">Format: Nama | Username | Password</p>
@@ -554,7 +537,6 @@
                                         <button onClick={handleImport} className="bg-green-700 text-white px-4 py-1 rounded text-sm mt-2">Proses Import</button>
                                     </div>
                                 )}
-
                                 <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-slate-100 uppercase font-bold">
@@ -566,11 +548,7 @@
                                                     <td className="p-3">{t.name}</td>
                                                     <td className="p-3">{t.username}</td>
                                                     <td className="p-3">
-                                                        <input 
-                                                            className="border p-1 rounded text-xs w-24" 
-                                                            value={t.password} 
-                                                            onChange={(e) => updateTeacher(t.id, 'password', e.target.value)}
-                                                        />
+                                                        <input className="border p-1 rounded text-xs w-24" value={t.password} onChange={(e) => updateTeacher(t.id, 'password', e.target.value)} />
                                                     </td>
                                                     <td className="p-3"><button onClick={() => deleteItem(setTeachers, teachers, t.id)} className="text-red-500"><i className="fas fa-trash"></i></button></td>
                                                 </tr>
@@ -592,7 +570,7 @@
             const filteredResults = results.filter(r => {
                 const matchTeacher = teacherFilter ? r.teacher === teacherFilter : true;
                 const matchCat = filterCategory === 'all' ? true : r.category === filterCategory;
-                const matchYear = r.academicYear === settings.currentAcademicYear; // Filter by active academic year
+                const matchYear = r.academicYear === settings.currentAcademicYear; 
                 return matchTeacher && matchCat && matchYear;
             });
 
@@ -641,20 +619,30 @@
             );
         };
 
-        // --- NEW: STUDENT EXAM UI (PAGINATION, REVIEW, TIMER) ---
+        // --- NEW: STUDENT EXAM UI (PERSISTENCE, PAGINATION, REVIEW, TIMER) ---
         const ExamRunner = ({ exam, student, onFinish, onCancel }) => {
-            const [currentIdx, setCurrentIdx] = useState(0);
-            const [answers, setAnswers] = useState({});
+            // Key unik untuk penyimpanan lokal berdasarkan ID ujian dan NIS siswa
+            const storageKey = `smpn1_exam_${exam.id}_${student.nim}`;
+
+            const [currentIdx, setCurrentIdx] = useState(() => {
+                // Ambil nomor soal terakhir dari storage, default 0
+                return parseInt(localStorage.getItem(`${storageKey}_idx`) || 0);
+            });
+            
+            const [answers, setAnswers] = useState(() => {
+                // Ambil jawaban tersimpan, default kosong
+                return JSON.parse(localStorage.getItem(`${storageKey}_answers`) || '{}');
+            });
+
             const [timeLeft, setTimeLeft] = useState(0);
-            const [viewMode, setViewMode] = useState('question'); // 'question' or 'review'
+            const [viewMode, setViewMode] = useState('question'); 
 
             useEffect(() => {
-                // Calculate time difference
+                // Hitung sisa waktu berdasarkan jam selesai absolut
                 const now = new Date();
                 const todayStr = now.toISOString().split('T')[0];
                 const endTime = new Date(`${exam.date}T${exam.end}`);
                 
-                // If exam date is today, calculate remaining. If not, this logic assumes simple duration for demo
                 const diff = Math.max(0, Math.floor((endTime - now) / 1000));
                 setTimeLeft(diff);
 
@@ -662,7 +650,7 @@
                     setTimeLeft(prev => {
                         if (prev <= 1) {
                             clearInterval(timer);
-                            submitExam();
+                            submitExam(true); // Auto submit jika waktu habis
                             return 0;
                         }
                         return prev - 1;
@@ -671,6 +659,16 @@
 
                 return () => clearInterval(timer);
             }, []);
+
+            // Simpan posisi soal setiap berubah
+            useEffect(() => {
+                localStorage.setItem(`${storageKey}_idx`, currentIdx);
+            }, [currentIdx]);
+
+            // Simpan jawaban setiap berubah
+            useEffect(() => {
+                localStorage.setItem(`${storageKey}_answers`, JSON.stringify(answers));
+            }, [answers]);
 
             const formatTime = (seconds) => {
                 const h = Math.floor(seconds / 3600);
@@ -683,8 +681,8 @@
                 setAnswers({ ...answers, [exam.questions[currentIdx].id]: val });
             };
 
-            const submitExam = () => {
-                if(!confirm("Yakin ingin menyelesaikan ujian?")) return;
+            const submitExam = (auto = false) => {
+                if(!auto && !confirm("Yakin ingin menyelesaikan ujian?")) return;
                 let score = 0;
                 let essayAnswers = {};
                 exam.questions.forEach(q => {
@@ -694,6 +692,11 @@
                         essayAnswers[q.question] = answers[q.id] || '(Kosong)';
                     }
                 });
+                
+                // Hapus data sementara setelah selesai
+                localStorage.removeItem(`${storageKey}_idx`);
+                localStorage.removeItem(`${storageKey}_answers`);
+                
                 onFinish(score, essayAnswers);
             };
 
@@ -785,7 +788,7 @@
                             </div>
                             <div className="flex justify-center gap-4">
                                 <button onClick={() => setViewMode('question')} className="px-6 py-3 rounded bg-gray-500 text-white">Kembali ke Soal</button>
-                                <button onClick={submitExam} className="px-8 py-3 rounded bg-green-600 text-white font-bold text-lg shadow-lg hover:bg-green-700">Kirim Jawaban (Selesai)</button>
+                                <button onClick={() => submitExam(false)} className="px-8 py-3 rounded bg-green-600 text-white font-bold text-lg shadow-lg hover:bg-green-700">Kirim Jawaban (Selesai)</button>
                             </div>
                         </div>
                     )}
@@ -793,25 +796,40 @@
             );
         };
 
-        // --- STUDENT DASHBOARD ---
+        // --- STUDENT DASHBOARD (MODIFIED WITH PERSISTENCE) ---
         const StudentDashboard = ({ user, setUser, students, setStudents, exams, results, setResults, handleLogout, settings }) => {
-            const [activeScreen, setActiveScreen] = useState('menu'); 
-            const [selectedCategory, setSelectedCategory] = useState(null); 
-            const [selectedExamId, setSelectedExamId] = useState(null);
+            // Kunci sesi spesifik user
+            const sessionKey = `smpn1_student_session_${user.nim}`;
+
+            // Inisialisasi state dari localStorage jika ada, agar tahan refresh
+            const [activeScreen, setActiveScreen] = useState(() => localStorage.getItem(`${sessionKey}_screen`) || 'menu');
+            const [selectedCategory, setSelectedCategory] = useState(() => localStorage.getItem(`${sessionKey}_cat`) || null);
+            const [selectedExamId, setSelectedExamId] = useState(() => {
+                const id = localStorage.getItem(`${sessionKey}_examId`);
+                return id ? parseInt(id) : null;
+            });
+
+            // Simpan state ke localStorage setiap berubah
+            useEffect(() => {
+                localStorage.setItem(`${sessionKey}_screen`, activeScreen);
+                if(selectedCategory) localStorage.setItem(`${sessionKey}_cat`, selectedCategory);
+                else localStorage.removeItem(`${sessionKey}_cat`);
+                
+                if(selectedExamId) localStorage.setItem(`${sessionKey}_examId`, selectedExamId);
+                else localStorage.removeItem(`${sessionKey}_examId`);
+            }, [activeScreen, selectedCategory, selectedExamId]);
+
+            // Logout khusus untuk membersihkan sesi
+            const onLogout = () => {
+                localStorage.removeItem(`${sessionKey}_screen`);
+                localStorage.removeItem(`${sessionKey}_cat`);
+                localStorage.removeItem(`${sessionKey}_examId`);
+                handleLogout(); // Panggil logout global
+            };
 
             const isExamDone = (examId) => results.some(r => r.nim === user.nim && r.examId === examId);
 
             const startExam = (exam) => {
-                // Check Schedule
-                const now = new Date();
-                const examStart = new Date(`${exam.date}T${exam.start}`);
-                const examEnd = new Date(`${exam.date}T${exam.end}`);
-                
-                // For demo purposes, we allow starting if today is the day, regardless of strict time
-                // In production, uncomment strict checks
-                // if (now < examStart) return alert("Waktu ujian belum mulai.");
-                // if (now > examEnd) return alert("Waktu ujian sudah habis.");
-
                 if(exam.questions.length === 0) return alert("Soal belum tersedia.");
                 setSelectedExamId(exam.id);
                 setActiveScreen('exam');
@@ -837,6 +855,15 @@
                 setSelectedExamId(null);
             };
 
+            const changePassword = () => {
+                const newPass = prompt("Masukkan password baru:");
+                if (!newPass) return;
+                const updatedStudents = students.map(s => s.id === user.id ? { ...s, password: newPass } : s);
+                setStudents(updatedStudents);
+                setUser({ ...user, password: newPass });
+                alert('Password berhasil diubah!');
+            };
+
             const activeExamData = exams.find(e => e.id === selectedExamId);
             const filteredExams = exams.filter(e => e.category === selectedCategory && e.academicYear === settings.currentAcademicYear);
 
@@ -848,20 +875,26 @@
                                 <h1 className="text-2xl font-bold text-gray-800">Halo, {user.name}</h1>
                                 <p className="text-gray-500">{user.nim} | {user.className}</p>
                             </div>
-                            <button onClick={handleLogout} className="text-red-600 hover:bg-red-50 px-4 py-2 rounded">
+                            <button onClick={onLogout} className="text-red-600 hover:bg-red-50 px-4 py-2 rounded">
                                 <i className="fas fa-sign-out-alt"></i> Keluar
                             </button>
                         </header>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div onClick={() => { setSelectedCategory('pts'); setActiveScreen('category_list'); }} className="bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg border-2 border-transparent transition group">
-                                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4"><i className="fas fa-file-alt text-orange-600 text-xl"></i></div>
-                                <h3 className="text-xl font-bold text-gray-800">PTS</h3>
-                                <p className="text-sm text-gray-500">Periode {settings.currentAcademicYear}</p>
+                        <div className="grid md:grid-cols-3 gap-6">
+                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div onClick={() => { setSelectedCategory('pts'); setActiveScreen('category_list'); }} className="bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg border-2 border-transparent transition group">
+                                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4"><i className="fas fa-file-alt text-orange-600 text-xl"></i></div>
+                                    <h3 className="text-xl font-bold text-gray-800">PTS</h3>
+                                    <p className="text-sm text-gray-500">Periode {settings.currentAcademicYear}</p>
+                                </div>
+                                <div onClick={() => { setSelectedCategory('pas'); setActiveScreen('category_list'); }} className="bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg border-2 border-transparent transition group">
+                                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4"><i className="fas fa-graduation-cap text-purple-600 text-xl"></i></div>
+                                    <h3 className="text-xl font-bold text-gray-800">PAS</h3>
+                                    <p className="text-sm text-gray-500">Periode {settings.currentAcademicYear}</p>
+                                </div>
                             </div>
-                            <div onClick={() => { setSelectedCategory('pas'); setActiveScreen('category_list'); }} className="bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg border-2 border-transparent transition group">
-                                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4"><i className="fas fa-graduation-cap text-purple-600 text-xl"></i></div>
-                                <h3 className="text-xl font-bold text-gray-800">PAS</h3>
-                                <p className="text-sm text-gray-500">Periode {settings.currentAcademicYear}</p>
+                            <div className="bg-white p-6 rounded-xl shadow-sm">
+                                <h3 className="font-bold text-gray-800 border-b pb-2 mb-3">Akun Saya</h3>
+                                <button onClick={changePassword} className="w-full bg-slate-700 text-white px-4 py-2 rounded hover:bg-slate-800 mb-2">Ganti Password</button>
                             </div>
                         </div>
                     </div>
@@ -872,7 +905,7 @@
                 <div className="min-h-screen bg-gray-100 p-4">
                     <div className="max-w-4xl mx-auto space-y-6 fade-in">
                         <header className="flex items-center gap-4 mb-6">
-                            <button onClick={() => setActiveScreen('menu')} className="bg-white p-2 rounded-full shadow w-10 h-10 flex items-center justify-center"><i className="fas fa-arrow-left"></i></button>
+                            <button onClick={() => { setActiveScreen('menu'); setSelectedCategory(null); }} className="bg-white p-2 rounded-full shadow w-10 h-10 flex items-center justify-center"><i className="fas fa-arrow-left"></i></button>
                             <div><h1 className="text-2xl font-bold">Daftar Ujian {selectedCategory.toUpperCase()}</h1></div>
                         </header>
                         <div className="space-y-4">
@@ -899,20 +932,26 @@
             if (activeScreen === 'exam' && activeExamData) {
                 return <ExamRunner exam={activeExamData} student={user} onFinish={onExamFinish} onCancel={() => setActiveScreen('category_list')} />;
             }
+            // Fallback jika data ujian hilang (misal dihapus guru saat siswa sedang ujian)
+            return <div className="p-10 text-center">Data ujian tidak ditemukan. <button onClick={() => setActiveScreen('menu')} className="text-blue-600 underline">Kembali</button></div>;
         };
 
         function ExamApp() {
-            // --- STATE GLOBAL & STORAGE ---
-            const [view, setView] = useState('login'); 
-            const [user, setUser] = useState(null); 
+            // --- STATE GLOBAL & STORAGE (PERSISTENCE) ---
+            // Inisialisasi view dan user dari localStorage agar tahan refresh
+            const [view, setView] = useState(() => localStorage.getItem('smpn1_app_view') || 'login'); 
+            const [user, setUser] = useState(() => {
+                const u = localStorage.getItem('smpn1_app_user');
+                return u ? JSON.parse(u) : null;
+            });
             
-            // App Settings (New)
+            // App Settings
             const [settings, setSettings] = useState(() => {
                 const saved = localStorage.getItem('smpn1arahan_settings');
                 return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
             });
 
-            // Inisialisasi Data (Using v4 to ensure clean state with new fields)
+            // Data Stores
             const [students, setStudents] = useState(() => {
                 const saved = localStorage.getItem('smpn1arahan_students_v4');
                 return saved ? JSON.parse(saved) : DEFAULT_STUDENTS;
@@ -937,7 +976,13 @@
             const [adminCreds] = useState({ username: 'admin', password: 'arkan@yumna' });
             const [loginInput, setLoginInput] = useState({ username: '', password: '' });
 
-            // --- EFFECT: SAVE DATA ---
+            // --- EFFECT: SAVE SESSION & DATA ---
+            useEffect(() => {
+                localStorage.setItem('smpn1_app_view', view);
+                if(user) localStorage.setItem('smpn1_app_user', JSON.stringify(user));
+                else localStorage.removeItem('smpn1_app_user');
+            }, [view, user]);
+
             useEffect(() => { localStorage.setItem('smpn1arahan_settings', JSON.stringify(settings)); }, [settings]);
             useEffect(() => { localStorage.setItem('smpn1arahan_students_v4', JSON.stringify(students)); }, [students]);
             useEffect(() => { localStorage.setItem('smpn1arahan_teachers_v4', JSON.stringify(teachers)); }, [teachers]);
@@ -977,6 +1022,9 @@
                 setUser(null);
                 setLoginInput({ username: '', password: '' });
                 setView('login');
+                // Hapus sesi global saat logout eksplisit
+                localStorage.removeItem('smpn1_app_view');
+                localStorage.removeItem('smpn1_app_user');
             };
 
             return (
