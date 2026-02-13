@@ -36,8 +36,6 @@
             .print-container { padding: 0; width: 100%; }
             table { width: 100%; border-collapse: collapse; }
             th, td { border: 1px solid black; padding: 8px; }
-            
-            /* Break page for bulk printing if needed */
             .page-break { page-break-after: always; }
         }
         .print-only { display: none; }
@@ -86,6 +84,12 @@
         ];
 
         const DEFAULT_EXAMS = []; 
+
+        // --- SHARED FUNCTIONS ---
+        // Fungsi untuk mengambil data monitoring (simulasi realtime)
+        const getMonitoringData = () => {
+            return JSON.parse(localStorage.getItem('smpn1arahan_monitoring') || '{}');
+        };
 
         // --- LOGIN COMPONENT ---
         const LoginView = ({ handleLogin, loginInput, setLoginInput, settings }) => (
@@ -147,6 +151,74 @@
             </div>
         );
 
+        // --- COMPONENT: MONITORING VIEW (REALTIME SIMULATION) ---
+        const MonitoringView = ({ settings }) => {
+            const [activeStudents, setActiveStudents] = useState({});
+
+            useEffect(() => {
+                // Polling setiap 3 detik untuk cek data localStorage
+                const interval = setInterval(() => {
+                    const data = getMonitoringData();
+                    setActiveStudents(data);
+                }, 3000);
+                // Initial fetch
+                setActiveStudents(getMonitoringData());
+                return () => clearInterval(interval);
+            }, []);
+
+            const studentList = Object.values(activeStudents);
+
+            return (
+                <div className="space-in fade-in no-print">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2 flex items-center gap-2">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                        </span>
+                        Monitoring Ujian (Realtime)
+                    </h2>
+                    
+                    {studentList.length === 0 ? (
+                        <div className="bg-white p-8 rounded-lg text-center text-gray-500 shadow-sm">
+                            <i className="fas fa-user-slash text-4xl mb-3 text-gray-300"></i>
+                            <p>Tidak ada siswa yang sedang mengerjakan ujian saat ini.</p>
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-lg shadow border overflow-hidden">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-green-50 text-green-900 uppercase">
+                                    <tr>
+                                        <th className="p-3">Nama Siswa</th>
+                                        <th className="p-3">NIS</th>
+                                        <th className="p-3">Kelas</th>
+                                        <th className="p-3">Sedang Mengerjakan</th>
+                                        <th className="p-3">Status</th>
+                                        <th className="p-3">Mulai</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                    {studentList.map((s, idx) => (
+                                        <tr key={idx} className="hover:bg-green-50 transition">
+                                            <td className="p-3 font-bold">{s.name}</td>
+                                            <td className="p-3">{s.nim}</td>
+                                            <td className="p-3"><span className="bg-gray-100 px-2 py-1 rounded font-bold text-xs">{s.className}</span></td>
+                                            <td className="p-3 text-blue-700 font-semibold">{s.subject} ({s.category.toUpperCase()})</td>
+                                            <td className="p-3">
+                                                <span className="flex items-center gap-1 text-green-600 font-bold text-xs bg-green-100 px-2 py-1 rounded-full w-fit">
+                                                    <i className="fas fa-pen-alt animate-pulse"></i> Mengerjakan
+                                                </span>
+                                            </td>
+                                            <td className="p-3 text-xs text-gray-500">{s.startTime}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
         // --- COMPONENT: TEACHER DASHBOARD ---
         const TeacherDashboard = ({ user, setUser, teachers, setTeachers, exams, setExams, results, handleLogout, settings }) => {
             const [activeTab, setActiveTab] = useState('pts');
@@ -155,7 +227,6 @@
 
             const myExams = exams.filter(e => e.teacher === user.name && e.category === activeTab);
             
-            // Added className to state
             const [newExam, setNewExam] = useState({ subject: '', className: '', date: '', start: '', end: '', academicYear: settings.currentAcademicYear });
             const [newQuestion, setNewQuestion] = useState({ type: 'multiple_choice', question: '', options: ['', '', '', ''], correctAnswer: '', points: 10 });
 
@@ -238,6 +309,9 @@
                             <button onClick={() => setActiveTab('profile')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'profile' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}>
                                 <i className="fas fa-user-circle w-6"></i> Profil Saya
                             </button>
+                            <button onClick={() => setActiveTab('monitoring')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'monitoring' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}>
+                                <i className="fas fa-desktop w-6"></i> Monitoring Ujian
+                            </button>
                             <button onClick={() => setActiveTab('pts')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'pts' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}>
                                 <i className="fas fa-file-alt w-6"></i> PTS
                             </button>
@@ -287,6 +361,8 @@
                                 </div>
                             </div>
                         )}
+
+                        {activeTab === 'monitoring' && <MonitoringView settings={settings} />}
 
                         {(activeTab === 'pts' || activeTab === 'pas') && (
                             <div className="space-y-8 fade-in no-print">
@@ -493,6 +569,9 @@
                             <button onClick={() => setActiveTab('settings')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'settings' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}>
                                 <i className="fas fa-cogs w-6"></i> Pengaturan
                             </button>
+                            <button onClick={() => setActiveTab('monitoring')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'monitoring' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}>
+                                <i className="fas fa-desktop w-6"></i> Monitoring Ujian
+                            </button>
                             <button onClick={() => setActiveTab('students')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'students' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}>
                                 <i className="fas fa-users w-6"></i> Data Siswa
                             </button>
@@ -535,6 +614,8 @@
                                 </div>
                             </div>
                         )}
+
+                        {activeTab === 'monitoring' && <MonitoringView settings={settings} />}
 
                         {activeTab === 'students' && (
                             <div className="space-y-6 fade-in no-print">
@@ -675,15 +756,7 @@
                             <div className="space-y-4">
                                 <h3 className="font-bold border-b pb-1 mb-3">Detail Jawaban</h3>
                                 {selectedExam.questions.map((q, idx) => {
-                                    const studentAns = selectedResult.essayAnswers[q.id] || selectedResult.essayAnswers[q.question]; // Compatibility
-                                    // For PG, we might need to look into a different structure if we saved pg answers. 
-                                    // Current implementation only saved essay answers in 'essayAnswers'. 
-                                    // To make this fully work for PG review, we need to save all answers.
-                                    // *Assuming future update saves all answers in a unified object, currently trying to display what's available*
-                                    
-                                    // NOTE: The previous ExamRunner implementation only passed `essayAnswers` for non-PG. 
-                                    // To fully implement "Print Answers", we'd need to save PG answers too. 
-                                    // For now, this will display Essay answers.
+                                    const studentAns = selectedResult.essayAnswers[q.id] || selectedResult.essayAnswers[q.question];
                                     
                                     return (
                                         <div key={q.id} className="mb-4 break-inside-avoid">
@@ -695,7 +768,6 @@
                                                         <div className="text-sm text-gray-600 ml-4">
                                                             <p>Tipe: Pilihan Ganda</p>
                                                             <p>Kunci Jawaban: <b>{q.correctAnswer}</b></p>
-                                                            {/* If we had student answer for PG stored, we would show it here */}
                                                         </div>
                                                     ) : (
                                                         <div className="bg-gray-50 p-3 rounded border mt-2">
@@ -785,6 +857,33 @@
             const [timeLeft, setTimeLeft] = useState(0);
             const [viewMode, setViewMode] = useState('question'); 
 
+            // -- NEW: MONITORING UPDATE EFFECT --
+            useEffect(() => {
+                // Saat komponen di-mount (ujian dimulai/dilanjutkan), update status ke monitoring
+                const updateMonitoring = () => {
+                    const currentData = getMonitoringData();
+                    currentData[student.nim] = {
+                        name: student.name,
+                        nim: student.nim,
+                        className: student.className,
+                        subject: exam.subject,
+                        category: exam.category,
+                        startTime: new Date().toLocaleTimeString(),
+                        status: 'working'
+                    };
+                    localStorage.setItem('smpn1arahan_monitoring', JSON.stringify(currentData));
+                };
+
+                updateMonitoring(); // Update awal
+
+                // Opsional: Update berkala jika ingin 'heartbeat' (tapi localStorage sudah persistent)
+                // Cleanup saat unmount/finish
+                return () => {
+                    // Jangan hapus di sini jika unmount karena refresh, 
+                    // hapus hanya jika finish exam.
+                };
+            }, []); // Run once on mount
+
             useEffect(() => {
                 // Hitung sisa waktu berdasarkan jam selesai absolut
                 const now = new Date();
@@ -793,6 +892,13 @@
                 
                 const diff = Math.max(0, Math.floor((endTime - now) / 1000));
                 setTimeLeft(diff);
+
+                // Check jika waktu sudah habis saat start
+                if (diff <= 0) {
+                    alert("Waktu ujian telah berakhir!");
+                    submitExam(true); // Auto submit immediate
+                    return;
+                }
 
                 const timer = setInterval(() => {
                     setTimeLeft(prev => {
@@ -846,6 +952,11 @@
                 // Hapus data sementara setelah selesai
                 localStorage.removeItem(`${storageKey}_idx`);
                 localStorage.removeItem(`${storageKey}_answers`);
+                
+                // Hapus dari monitoring
+                const currentData = getMonitoringData();
+                delete currentData[student.nim];
+                localStorage.setItem('smpn1arahan_monitoring', JSON.stringify(currentData));
                 
                 onFinish(score, essayAnswers);
             };
