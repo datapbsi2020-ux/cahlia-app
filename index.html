@@ -86,7 +86,6 @@
         const DEFAULT_EXAMS = []; 
 
         // --- SHARED FUNCTIONS ---
-        // Fungsi untuk mengambil data monitoring (simulasi realtime)
         const getMonitoringData = () => {
             return JSON.parse(localStorage.getItem('smpn1arahan_monitoring') || '{}');
         };
@@ -151,17 +150,15 @@
             </div>
         );
 
-        // --- COMPONENT: MONITORING VIEW (REALTIME SIMULATION) ---
+        // --- MONITORING VIEW ---
         const MonitoringView = ({ settings }) => {
             const [activeStudents, setActiveStudents] = useState({});
 
             useEffect(() => {
-                // Polling setiap 3 detik untuk cek data localStorage
                 const interval = setInterval(() => {
                     const data = getMonitoringData();
                     setActiveStudents(data);
                 }, 3000);
-                // Initial fetch
                 setActiveStudents(getMonitoringData());
                 return () => clearInterval(interval);
             }, []);
@@ -219,7 +216,7 @@
             );
         };
 
-        // --- COMPONENT: TEACHER DASHBOARD ---
+        // --- TEACHER DASHBOARD ---
         const TeacherDashboard = ({ user, setUser, teachers, setTeachers, exams, setExams, results, handleLogout, settings }) => {
             const [activeTab, setActiveTab] = useState('pts');
             const [editingExamId, setEditingExamId] = useState(null);
@@ -230,7 +227,6 @@
             const [newExam, setNewExam] = useState({ subject: '', className: '', date: '', start: '', end: '', academicYear: settings.currentAcademicYear });
             const [newQuestion, setNewQuestion] = useState({ type: 'multiple_choice', question: '', options: ['', '', '', ''], correctAnswer: '', points: 10 });
 
-            // Photo Upload Handler
             const handlePhotoUpload = (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -257,11 +253,22 @@
                     start: newExam.start,
                     end: newExam.end,
                     academicYear: newExam.academicYear,
+                    isStarted: false, // Default: Ujian belum dimulai oleh Guru
                     questions: []
                 };
                 setExams([...exams, examPacket]);
                 setNewExam({ ...newExam, subject: '', className: '', date: '', start: '', end: '' });
                 alert("Jadwal berhasil dibuat.");
+            };
+
+            const toggleExamStatus = (examId) => {
+                const updatedExams = exams.map(e => {
+                    if (e.id === examId) {
+                        return { ...e, isStarted: !e.isStarted };
+                    }
+                    return e;
+                });
+                setExams(updatedExams);
             };
 
             const changePassword = () => {
@@ -296,52 +303,31 @@
                      <div className="w-64 bg-teal-800 text-white flex flex-col shadow-xl fixed h-full overflow-y-auto no-print z-20">
                         <div className="p-6 text-center border-b border-teal-700 flex flex-col items-center">
                             <div className="w-20 h-20 rounded-full bg-teal-600 mb-3 border-4 border-teal-500 overflow-hidden flex items-center justify-center">
-                                {user.photo ? (
-                                    <img src={user.photo} alt="Profil" className="w-full h-full object-cover" />
-                                ) : (
-                                    <i className="fas fa-user text-4xl text-teal-300"></i>
-                                )}
+                                {user.photo ? <img src={user.photo} alt="Profil" className="w-full h-full object-cover" /> : <i className="fas fa-user text-4xl text-teal-300"></i>}
                             </div>
                             <h2 className="text-lg font-bold">{user.name}</h2>
                             <p className="text-teal-300 text-xs">Guru</p>
                         </div>
                         <nav className="flex-grow p-4 space-y-2">
-                            <button onClick={() => setActiveTab('profile')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'profile' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}>
-                                <i className="fas fa-user-circle w-6"></i> Profil Saya
-                            </button>
-                            <button onClick={() => setActiveTab('monitoring')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'monitoring' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}>
-                                <i className="fas fa-desktop w-6"></i> Monitoring Ujian
-                            </button>
-                            <button onClick={() => setActiveTab('pts')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'pts' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}>
-                                <i className="fas fa-file-alt w-6"></i> PTS
-                            </button>
-                            <button onClick={() => setActiveTab('pas')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'pas' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}>
-                                <i className="fas fa-graduation-cap w-6"></i> PAS
-                            </button>
-                            <button onClick={() => setActiveTab('results')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'results' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}>
-                                <i className="fas fa-chart-bar w-6"></i> Hasil Ujian
-                            </button>
+                            <button onClick={() => setActiveTab('profile')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'profile' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}><i className="fas fa-user-circle w-6"></i> Profil Saya</button>
+                            <button onClick={() => setActiveTab('monitoring')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'monitoring' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}><i className="fas fa-desktop w-6"></i> Monitoring Ujian</button>
+                            <button onClick={() => setActiveTab('pts')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'pts' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}><i className="fas fa-file-alt w-6"></i> PTS</button>
+                            <button onClick={() => setActiveTab('pas')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'pas' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}><i className="fas fa-graduation-cap w-6"></i> PAS</button>
+                            <button onClick={() => setActiveTab('results')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'results' ? 'bg-teal-600 shadow' : 'hover:bg-teal-700'}`}><i className="fas fa-chart-bar w-6"></i> Hasil Ujian</button>
                         </nav>
                         <div className="p-4 border-t border-teal-700 space-y-2">
-                            <button onClick={handleLogout} className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded flex items-center justify-center gap-2 transition">
-                                <i className="fas fa-sign-out-alt"></i> Keluar
-                            </button>
+                            <button onClick={handleLogout} className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded flex items-center justify-center gap-2 transition"><i className="fas fa-sign-out-alt"></i> Keluar</button>
                         </div>
                     </div>
 
                     <div className="flex-grow p-8 ml-64 overflow-y-auto min-h-screen">
-                        
                         {activeTab === 'profile' && (
                             <div className="space-y-6 fade-in no-print">
                                 <h2 className="text-2xl font-bold text-gray-800 border-b pb-2">Profil Guru</h2>
                                 <div className="bg-white p-6 rounded-lg shadow-sm border max-w-2xl">
                                     <div className="flex items-center gap-6 mb-6">
                                         <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 border-2 border-teal-500">
-                                            {user.photo ? (
-                                                <img src={user.photo} alt="Profil" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-400"><i className="fas fa-user text-4xl"></i></div>
-                                            )}
+                                            {user.photo ? <img src={user.photo} alt="Profil" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-400"><i className="fas fa-user text-4xl"></i></div>}
                                         </div>
                                         <div>
                                             <h3 className="text-xl font-bold">{user.name}</h3>
@@ -367,38 +353,14 @@
                         {(activeTab === 'pts' || activeTab === 'pas') && (
                             <div className="space-y-8 fade-in no-print">
                                 <h2 className="text-2xl font-bold text-gray-800 border-b pb-2 uppercase">Kelola {activeTab}</h2>
-                                
                                 <div className="bg-white p-6 rounded-lg shadow-sm border space-y-4">
                                     <h3 className="font-bold text-teal-700">Buat Jadwal Baru</h3>
                                     <div className="grid md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500">Mata Pelajaran</label>
-                                            <input className="border p-2 rounded w-full" value={newExam.subject} onChange={e => setNewExam({...newExam, subject: e.target.value})} placeholder="Contoh: IPA" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500">Target Kelas</label>
-                                            <input className="border p-2 rounded w-full" value={newExam.className} onChange={e => setNewExam({...newExam, className: e.target.value})} placeholder="Contoh: 9A, 7B" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500">Tahun Akademik</label>
-                                            <select className="border p-2 rounded w-full" value={newExam.academicYear} onChange={e => setNewExam({...newExam, academicYear: e.target.value})}>
-                                                {ACADEMIC_YEARS.map(yr => <option key={yr} value={yr}>{yr}</option>)}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500">Tanggal</label>
-                                            <input type="date" className="border p-2 rounded w-full" value={newExam.date} onChange={e => setNewExam({...newExam, date: e.target.value})} />
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <div className="flex-1">
-                                                <label className="text-xs font-bold text-gray-500">Mulai</label>
-                                                <input type="time" className="border p-2 rounded w-full" value={newExam.start} onChange={e => setNewExam({...newExam, start: e.target.value})} />
-                                            </div>
-                                            <div className="flex-1">
-                                                <label className="text-xs font-bold text-gray-500">Selesai</label>
-                                                <input type="time" className="border p-2 rounded w-full" value={newExam.end} onChange={e => setNewExam({...newExam, end: e.target.value})} />
-                                            </div>
-                                        </div>
+                                        <div><label className="text-xs font-bold text-gray-500">Mata Pelajaran</label><input className="border p-2 rounded w-full" value={newExam.subject} onChange={e => setNewExam({...newExam, subject: e.target.value})} placeholder="Contoh: IPA" /></div>
+                                        <div><label className="text-xs font-bold text-gray-500">Target Kelas</label><input className="border p-2 rounded w-full" value={newExam.className} onChange={e => setNewExam({...newExam, className: e.target.value})} placeholder="Contoh: 9A, 7B" /></div>
+                                        <div><label className="text-xs font-bold text-gray-500">Tahun Akademik</label><select className="border p-2 rounded w-full" value={newExam.academicYear} onChange={e => setNewExam({...newExam, academicYear: e.target.value})}>{ACADEMIC_YEARS.map(yr => <option key={yr} value={yr}>{yr}</option>)}</select></div>
+                                        <div><label className="text-xs font-bold text-gray-500">Tanggal</label><input type="date" className="border p-2 rounded w-full" value={newExam.date} onChange={e => setNewExam({...newExam, date: e.target.value})} /></div>
+                                        <div className="flex gap-2"><div className="flex-1"><label className="text-xs font-bold text-gray-500">Mulai</label><input type="time" className="border p-2 rounded w-full" value={newExam.start} onChange={e => setNewExam({...newExam, start: e.target.value})} /></div><div className="flex-1"><label className="text-xs font-bold text-gray-500">Selesai</label><input type="time" className="border p-2 rounded w-full" value={newExam.end} onChange={e => setNewExam({...newExam, end: e.target.value})} /></div></div>
                                     </div>
                                     <button onClick={createExam} className="bg-teal-600 text-white px-4 py-2 rounded font-bold hover:bg-teal-700">Buat Jadwal</button>
                                 </div>
@@ -410,12 +372,22 @@
                                                 <div>
                                                     <h3 className="font-bold text-lg">{exam.subject} <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded ml-2">Kelas {exam.className}</span></h3>
                                                     <p className="text-xs text-gray-500 mt-1">{exam.date} | {exam.start} - {exam.end}</p>
-                                                    <span className="text-xs font-bold text-blue-600">{exam.questions.length} Soal</span>
+                                                    <div className="mt-2">
+                                                        <span className="text-xs font-bold text-blue-600 mr-3">{exam.questions.length} Soal</span>
+                                                        {exam.isStarted ? 
+                                                            <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded animate-pulse">● Ujian Berlangsung</span> : 
+                                                            <span className="text-xs font-bold text-red-500 bg-red-100 px-2 py-1 rounded">● Belum Dimulai</span>
+                                                        }
+                                                    </div>
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => setEditingExamId(editingExamId === exam.id ? null : exam.id)} className="px-3 py-1 bg-white border text-teal-600 rounded hover:bg-teal-50">
-                                                        {editingExamId === exam.id ? 'Tutup' : 'Isi Soal'}
+                                                    <button 
+                                                        onClick={() => toggleExamStatus(exam.id)} 
+                                                        className={`px-3 py-1 rounded text-white font-bold text-sm ${exam.isStarted ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                                                    >
+                                                        {exam.isStarted ? 'Hentikan Ujian' : 'Mulai Ujian'}
                                                     </button>
+                                                    <button onClick={() => setEditingExamId(editingExamId === exam.id ? null : exam.id)} className="px-3 py-1 bg-white border text-teal-600 rounded hover:bg-teal-50">{editingExamId === exam.id ? 'Tutup' : 'Isi Soal'}</button>
                                                     <button onClick={() => deleteExam(exam.id)} className="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200"><i className="fas fa-trash"></i></button>
                                                 </div>
                                             </div>
@@ -480,17 +452,14 @@
             settings, setSettings
         }) => {
             const [activeTab, setActiveTab] = useState('students');
-            
             const [newStudent, setNewStudent] = useState({ name: '', nim: '', username: '', password: '', className: '', subject: '' });
             const [newTeacher, setNewTeacher] = useState({ name: '', username: '', password: '' });
             const [importText, setImportText] = useState('');
             const [showImport, setShowImport] = useState(false);
             const [importMode, setImportMode] = useState('student'); 
 
-            // --- SETTINGS LOGIC ---
             const updateSettings = (key, val) => setSettings({ ...settings, [key]: val });
 
-            // --- IMPORT LOGIC ---
             const handleImport = () => {
                 const lines = importText.trim().split('\n');
                 let count = 0;
@@ -526,7 +495,7 @@
                                 name: parts[0]?.trim(),
                                 username: parts[1]?.trim(),
                                 password: parts[2]?.trim(),
-                                photo: null // Default null for imported teachers
+                                photo: null 
                             };
                         }
                         return null;
@@ -536,24 +505,28 @@
                         count = imported.length;
                     }
                 }
-                
                 setImportText('');
                 setShowImport(false);
                 alert(`Berhasil import ${count} data.`);
+            };
+
+            // Session Reset Logic
+            const resetAllSessions = () => {
+                if(confirm("Apakah Anda yakin ingin mereset semua sesi login? Pengguna yang sedang login mungkin perlu login ulang.")) {
+                    localStorage.removeItem('smpn1_active_sessions');
+                    alert("Semua sesi berhasil direset.");
+                }
             };
 
             const addStudent = () => {
                 setStudents([...students, { ...newStudent, id: Date.now() }]);
                 setNewStudent({ name: '', nim: '', username: '', password: '', className: '', subject: '' });
             };
-            
             const addTeacher = () => {
                 setTeachers([...teachers, { ...newTeacher, id: Date.now() }]);
                 setNewTeacher({ name: '', username: '', password: '' });
             };
-
             const deleteItem = (setList, list, id) => setList(list.filter(item => item.id !== id));
-            
             const updateTeacher = (id, field, val) => {
                 setTeachers(teachers.map(t => t.id === id ? { ...t, [field]: val } : t));
             };
@@ -566,26 +539,14 @@
                             <p className="text-slate-400 text-xs mt-1">{settings.appName}</p>
                         </div>
                         <nav className="flex-grow p-4 space-y-2">
-                            <button onClick={() => setActiveTab('settings')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'settings' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}>
-                                <i className="fas fa-cogs w-6"></i> Pengaturan
-                            </button>
-                            <button onClick={() => setActiveTab('monitoring')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'monitoring' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}>
-                                <i className="fas fa-desktop w-6"></i> Monitoring Ujian
-                            </button>
-                            <button onClick={() => setActiveTab('students')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'students' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}>
-                                <i className="fas fa-users w-6"></i> Data Siswa
-                            </button>
-                            <button onClick={() => setActiveTab('teachers')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'teachers' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}>
-                                <i className="fas fa-chalkboard-teacher w-6"></i> Data Guru
-                            </button>
-                            <button onClick={() => setActiveTab('results')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'results' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}>
-                                <i className="fas fa-chart-bar w-6"></i> Hasil Ujian
-                            </button>
+                            <button onClick={() => setActiveTab('settings')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'settings' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}><i className="fas fa-cogs w-6"></i> Pengaturan</button>
+                            <button onClick={() => setActiveTab('monitoring')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'monitoring' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}><i className="fas fa-desktop w-6"></i> Monitoring Ujian</button>
+                            <button onClick={() => setActiveTab('students')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'students' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}><i className="fas fa-users w-6"></i> Data Siswa</button>
+                            <button onClick={() => setActiveTab('teachers')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'teachers' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}><i className="fas fa-chalkboard-teacher w-6"></i> Data Guru</button>
+                            <button onClick={() => setActiveTab('results')} className={`w-full text-left p-3 rounded flex items-center gap-3 transition ${activeTab === 'results' ? 'bg-blue-600 shadow' : 'hover:bg-slate-800'}`}><i className="fas fa-chart-bar w-6"></i> Hasil Ujian</button>
                         </nav>
                         <div className="p-4 border-t border-slate-700">
-                            <button onClick={handleLogout} className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded flex items-center justify-center gap-2 transition">
-                                <i className="fas fa-sign-out-alt"></i> Keluar
-                            </button>
+                            <button onClick={handleLogout} className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded flex items-center justify-center gap-2 transition"><i className="fas fa-sign-out-alt"></i> Keluar</button>
                         </div>
                     </div>
 
@@ -594,22 +555,13 @@
                             <div className="space-y-6 fade-in no-print">
                                 <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Pengaturan Aplikasi</h2>
                                 <div className="bg-white p-6 rounded-lg shadow-sm border space-y-4 max-w-2xl">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-600 mb-1">Nama Aplikasi / Sekolah</label>
-                                        <input className="w-full border p-2 rounded" value={settings.appName} onChange={e => updateSettings('appName', e.target.value)} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-600 mb-1">URL Gambar Latar Belakang</label>
-                                        <input className="w-full border p-2 rounded" value={settings.appBg} onChange={e => updateSettings('appBg', e.target.value)} placeholder="https://example.com/image.jpg" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-600 mb-1">Periode Akademik Aktif (Backup/Filter)</label>
-                                        <select className="w-full border p-2 rounded" value={settings.currentAcademicYear} onChange={e => updateSettings('currentAcademicYear', e.target.value)}>
-                                            {ACADEMIC_YEARS.map(yr => <option key={yr} value={yr}>{yr}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="bg-blue-50 p-3 rounded text-sm text-blue-800">
-                                        Pengaturan ini akan tersimpan otomatis dan mempengaruhi tampilan Login serta filter data.
+                                    <div><label className="block text-sm font-bold text-gray-600 mb-1">Nama Aplikasi / Sekolah</label><input className="w-full border p-2 rounded" value={settings.appName} onChange={e => updateSettings('appName', e.target.value)} /></div>
+                                    <div><label className="block text-sm font-bold text-gray-600 mb-1">URL Gambar Latar Belakang</label><input className="w-full border p-2 rounded" value={settings.appBg} onChange={e => updateSettings('appBg', e.target.value)} placeholder="https://example.com/image.jpg" /></div>
+                                    <div><label className="block text-sm font-bold text-gray-600 mb-1">Periode Akademik Aktif (Backup/Filter)</label><select className="w-full border p-2 rounded" value={settings.currentAcademicYear} onChange={e => updateSettings('currentAcademicYear', e.target.value)}>{ACADEMIC_YEARS.map(yr => <option key={yr} value={yr}>{yr}</option>)}</select></div>
+                                    <div className="bg-red-50 p-4 rounded border border-red-200 mt-4">
+                                        <h4 className="font-bold text-red-800 mb-2">Zona Bahaya</h4>
+                                        <p className="text-xs text-red-600 mb-2">Gunakan jika ada pengguna yang terkunci karena error "Akun sedang digunakan".</p>
+                                        <button onClick={resetAllSessions} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm">Reset Semua Sesi Login</button>
                                     </div>
                                 </div>
                             </div>
@@ -649,12 +601,7 @@
                                         <tbody>
                                             {students.map(s => (
                                                 <tr key={s.id} className="border-t hover:bg-slate-50">
-                                                    <td className="p-3">{s.name}</td>
-                                                    <td className="p-3">{s.nim}</td>
-                                                    <td className="p-3"><span className="bg-yellow-100 px-2 rounded text-xs font-bold">{s.className}</span></td>
-                                                    <td className="p-3">{s.subject}</td>
-                                                    <td className="p-3 font-mono text-xs">{s.username} / {s.password}</td>
-                                                    <td className="p-3"><button onClick={() => deleteItem(setStudents, students, s.id)} className="text-red-500"><i className="fas fa-trash"></i></button></td>
+                                                    <td className="p-3">{s.name}</td><td className="p-3">{s.nim}</td><td className="p-3"><span className="bg-yellow-100 px-2 rounded text-xs font-bold">{s.className}</span></td><td className="p-3">{s.subject}</td><td className="p-3 font-mono text-xs">{s.username} / {s.password}</td><td className="p-3"><button onClick={() => deleteItem(setStudents, students, s.id)} className="text-red-500"><i className="fas fa-trash"></i></button></td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -688,11 +635,8 @@
                                         <tbody>
                                             {teachers.map(t => (
                                                 <tr key={t.id} className="border-t hover:bg-slate-50">
-                                                    <td className="p-3">{t.name}</td>
-                                                    <td className="p-3">{t.username}</td>
-                                                    <td className="p-3">
-                                                        <input className="border p-1 rounded text-xs w-24" value={t.password} onChange={(e) => updateTeacher(t.id, 'password', e.target.value)} />
-                                                    </td>
+                                                    <td className="p-3">{t.name}</td><td className="p-3">{t.username}</td>
+                                                    <td className="p-3"><input className="border p-1 rounded text-xs w-24" value={t.password} onChange={(e) => updateTeacher(t.id, 'password', e.target.value)} /></td>
                                                     <td className="p-3"><button onClick={() => deleteItem(setTeachers, teachers, t.id)} className="text-red-500"><i className="fas fa-trash"></i></button></td>
                                                 </tr>
                                             ))}
@@ -727,22 +671,15 @@
                 return (
                     <div className="space-in fade-in">
                         <div className="flex justify-between items-center mb-6 no-print">
-                            <button onClick={() => setViewMode('table')} className="bg-white border px-4 py-2 rounded shadow hover:bg-gray-100 flex items-center gap-2">
-                                <i className="fas fa-arrow-left"></i> Kembali
-                            </button>
-                            <button onClick={() => window.print()} className="bg-indigo-600 text-white px-4 py-2 rounded shadow flex items-center gap-2">
-                                <i className="fas fa-print"></i> Cetak Lembar Siswa
-                            </button>
+                            <button onClick={() => setViewMode('table')} className="bg-white border px-4 py-2 rounded shadow hover:bg-gray-100 flex items-center gap-2"><i className="fas fa-arrow-left"></i> Kembali</button>
+                            <button onClick={() => window.print()} className="bg-indigo-600 text-white px-4 py-2 rounded shadow flex items-center gap-2"><i className="fas fa-print"></i> Cetak Lembar Siswa</button>
                         </div>
-
-                        {/* Lembar Jawaban Siswa - Print Friendly */}
                         <div className="bg-white p-8 rounded-lg shadow print-container">
                             <div className="text-center mb-6 border-b pb-4">
                                 <h1 className="text-2xl font-bold uppercase">{settings.appName}</h1>
                                 <h2 className="text-xl font-bold uppercase">Lembar Hasil Ujian {selectedResult.category}</h2>
                                 <p>Tahun Akademik: {selectedResult.academicYear}</p>
                             </div>
-                            
                             <table className="w-full mb-6 text-sm">
                                 <tbody>
                                     <tr><td className="font-bold w-32 py-1">Nama Siswa</td><td>: {selectedResult.studentName}</td></tr>
@@ -752,12 +689,10 @@
                                     <tr><td className="font-bold py-1">Nilai (PG)</td><td>: <span className="font-bold text-lg">{selectedResult.score}</span></td></tr>
                                 </tbody>
                             </table>
-
                             <div className="space-y-4">
                                 <h3 className="font-bold border-b pb-1 mb-3">Detail Jawaban</h3>
                                 {selectedExam.questions.map((q, idx) => {
                                     const studentAns = selectedResult.essayAnswers[q.id] || selectedResult.essayAnswers[q.question];
-                                    
                                     return (
                                         <div key={q.id} className="mb-4 break-inside-avoid">
                                             <div className="flex gap-2">
@@ -765,15 +700,9 @@
                                                 <div className="flex-1">
                                                     <p className="mb-1">{q.question}</p>
                                                     {q.type === 'multiple_choice' ? (
-                                                        <div className="text-sm text-gray-600 ml-4">
-                                                            <p>Tipe: Pilihan Ganda</p>
-                                                            <p>Kunci Jawaban: <b>{q.correctAnswer}</b></p>
-                                                        </div>
+                                                        <div className="text-sm text-gray-600 ml-4"><p>Tipe: Pilihan Ganda</p><p>Kunci Jawaban: <b>{q.correctAnswer}</b></p></div>
                                                     ) : (
-                                                        <div className="bg-gray-50 p-3 rounded border mt-2">
-                                                            <p className="text-xs font-bold text-gray-500">Jawaban Siswa:</p>
-                                                            <p>{studentAns || '-'}</p>
-                                                        </div>
+                                                        <div className="bg-gray-50 p-3 rounded border mt-2"><p className="text-xs font-bold text-gray-500">Jawaban Siswa:</p><p>{studentAns || '-'}</p></div>
                                                     )}
                                                 </div>
                                             </div>
@@ -811,8 +740,7 @@
                                 <tr>
                                     <th className="p-3 border">Nama Siswa</th><th className="p-3 border">NIS</th><th className="p-3 border">Mapel</th>
                                     {!teacherFilter && <th className="p-3 border">Guru</th>}
-                                    <th className="p-3 border">Nilai</th>
-                                    <th className="p-3 border no-print">Aksi</th>
+                                    <th className="p-3 border">Nilai</th><th className="p-3 border no-print">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
@@ -823,12 +751,7 @@
                                         {!teacherFilter && <td className="p-3 border">{res.teacher}</td>}
                                         <td className="p-3 border font-bold text-green-600">{res.score}</td>
                                         <td className="p-3 border text-center no-print">
-                                            <button 
-                                                onClick={() => { setSelectedResult(res); setViewMode('detail'); }} 
-                                                className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs hover:bg-blue-200"
-                                            >
-                                                <i className="fas fa-eye"></i> Detail & Cetak
-                                            </button>
+                                            <button onClick={() => { setSelectedResult(res); setViewMode('detail'); }} className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs hover:bg-blue-200"><i className="fas fa-eye"></i> Detail & Cetak</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -841,25 +764,14 @@
 
         // --- NEW: STUDENT EXAM UI (PERSISTENCE, PAGINATION, REVIEW, TIMER) ---
         const ExamRunner = ({ exam, student, onFinish, onCancel }) => {
-            // Key unik untuk penyimpanan lokal berdasarkan ID ujian dan NIS siswa
             const storageKey = `smpn1_exam_${exam.id}_${student.nim}`;
-
-            const [currentIdx, setCurrentIdx] = useState(() => {
-                // Ambil nomor soal terakhir dari storage, default 0
-                return parseInt(localStorage.getItem(`${storageKey}_idx`) || 0);
-            });
-            
-            const [answers, setAnswers] = useState(() => {
-                // Ambil jawaban tersimpan, default kosong
-                return JSON.parse(localStorage.getItem(`${storageKey}_answers`) || '{}');
-            });
-
+            const [currentIdx, setCurrentIdx] = useState(() => parseInt(localStorage.getItem(`${storageKey}_idx`) || 0));
+            const [answers, setAnswers] = useState(() => JSON.parse(localStorage.getItem(`${storageKey}_answers`) || '{}'));
             const [timeLeft, setTimeLeft] = useState(0);
             const [viewMode, setViewMode] = useState('question'); 
 
-            // -- NEW: MONITORING UPDATE EFFECT --
+            // MONITORING UPDATE EFFECT
             useEffect(() => {
-                // Saat komponen di-mount (ujian dimulai/dilanjutkan), update status ke monitoring
                 const updateMonitoring = () => {
                     const currentData = getMonitoringData();
                     currentData[student.nim] = {
@@ -873,30 +785,18 @@
                     };
                     localStorage.setItem('smpn1arahan_monitoring', JSON.stringify(currentData));
                 };
-
-                updateMonitoring(); // Update awal
-
-                // Opsional: Update berkala jika ingin 'heartbeat' (tapi localStorage sudah persistent)
-                // Cleanup saat unmount/finish
-                return () => {
-                    // Jangan hapus di sini jika unmount karena refresh, 
-                    // hapus hanya jika finish exam.
-                };
-            }, []); // Run once on mount
+                updateMonitoring();
+            }, []); 
 
             useEffect(() => {
-                // Hitung sisa waktu berdasarkan jam selesai absolut
                 const now = new Date();
-                const todayStr = now.toISOString().split('T')[0];
                 const endTime = new Date(`${exam.date}T${exam.end}`);
-                
                 const diff = Math.max(0, Math.floor((endTime - now) / 1000));
                 setTimeLeft(diff);
 
-                // Check jika waktu sudah habis saat start
                 if (diff <= 0) {
                     alert("Waktu ujian telah berakhir!");
-                    submitExam(true); // Auto submit immediate
+                    submitExam(true);
                     return;
                 }
 
@@ -904,25 +804,17 @@
                     setTimeLeft(prev => {
                         if (prev <= 1) {
                             clearInterval(timer);
-                            submitExam(true); // Auto submit jika waktu habis
+                            submitExam(true); 
                             return 0;
                         }
                         return prev - 1;
                     });
                 }, 1000);
-
                 return () => clearInterval(timer);
             }, []);
 
-            // Simpan posisi soal setiap berubah
-            useEffect(() => {
-                localStorage.setItem(`${storageKey}_idx`, currentIdx);
-            }, [currentIdx]);
-
-            // Simpan jawaban setiap berubah
-            useEffect(() => {
-                localStorage.setItem(`${storageKey}_answers`, JSON.stringify(answers));
-            }, [answers]);
+            useEffect(() => { localStorage.setItem(`${storageKey}_idx`, currentIdx); }, [currentIdx]);
+            useEffect(() => { localStorage.setItem(`${storageKey}_answers`, JSON.stringify(answers)); }, [answers]);
 
             const formatTime = (seconds) => {
                 const h = Math.floor(seconds / 3600);
@@ -938,22 +830,18 @@
             const submitExam = (auto = false) => {
                 if(!auto && !confirm("Yakin ingin menyelesaikan ujian?")) return;
                 let score = 0;
-                let essayAnswers = {}; // We will store ALL answers here for detail view
+                let essayAnswers = {}; 
                 
                 exam.questions.forEach(q => {
-                    // Save answer for both types
                     essayAnswers[q.id] = answers[q.id] || '(Kosong)';
-
                     if (q.type === 'multiple_choice') {
                         if (answers[q.id] === q.correctAnswer) score += parseInt(q.points);
                     }
                 });
                 
-                // Hapus data sementara setelah selesai
                 localStorage.removeItem(`${storageKey}_idx`);
                 localStorage.removeItem(`${storageKey}_answers`);
                 
-                // Hapus dari monitoring
                 const currentData = getMonitoringData();
                 delete currentData[student.nim];
                 localStorage.setItem('smpn1arahan_monitoring', JSON.stringify(currentData));
@@ -965,38 +853,22 @@
 
             return (
                 <div className="max-w-4xl mx-auto p-4 min-h-screen pb-20 fade-in bg-gray-100">
-                    {/* Header */}
                     <div className="sticky top-4 z-30 bg-white p-4 rounded-xl shadow-lg border-b-4 border-yellow-500 mb-6 flex justify-between items-center">
-                        <div>
-                            <h2 className="font-bold text-lg">{exam.subject}</h2>
-                            <p className="text-xs text-gray-500">{student.name} - {student.nim}</p>
-                        </div>
-                        <div className="text-right">
-                            <div className="text-xs text-gray-500">Sisa Waktu</div>
-                            <div className={`font-mono font-bold text-xl ${timeLeft < 300 ? 'text-red-600 animate-pulse' : 'text-blue-600'}`}>
-                                {formatTime(timeLeft)}
-                            </div>
-                        </div>
+                        <div><h2 className="font-bold text-lg">{exam.subject}</h2><p className="text-xs text-gray-500">{student.name} - {student.nim}</p></div>
+                        <div className="text-right"><div className="text-xs text-gray-500">Sisa Waktu</div><div className={`font-mono font-bold text-xl ${timeLeft < 300 ? 'text-red-600 animate-pulse' : 'text-blue-600'}`}>{formatTime(timeLeft)}</div></div>
                     </div>
 
                     {viewMode === 'question' && (
                         <div className="bg-white p-8 rounded-xl shadow-md min-h-[400px] flex flex-col justify-between">
                             <div>
-                                <div className="flex justify-between mb-4">
-                                    <span className="bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded">Soal No. {currentIdx + 1}</span>
-                                    <span className="text-gray-400 text-xs">Bobot: {currentQ.points}</span>
-                                </div>
+                                <div className="flex justify-between mb-4"><span className="bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded">Soal No. {currentIdx + 1}</span><span className="text-gray-400 text-xs">Bobot: {currentQ.points}</span></div>
                                 <p className="text-lg font-medium mb-6 leading-relaxed">{currentQ.question}</p>
-                                
                                 {currentQ.type === 'multiple_choice' ? (
                                     <div className="space-y-3">
                                         {currentQ.options.map((opt, i) => (
                                             <label key={i} className={`flex items-center p-4 rounded-lg border cursor-pointer transition ${answers[currentQ.id] === opt ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' : 'hover:bg-gray-50 border-gray-200'}`}>
-                                                <div className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${answers[currentQ.id] === opt ? 'border-blue-500' : 'border-gray-300'}`}>
-                                                    {answers[currentQ.id] === opt && <div className="w-3 h-3 bg-blue-500 rounded-full"></div>}
-                                                </div>
-                                                <input type="radio" name={`q-${currentQ.id}`} className="hidden" onChange={() => handleAnswer(opt)} checked={answers[currentQ.id] === opt} />
-                                                <span className="text-gray-700">{opt}</span>
+                                                <div className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${answers[currentQ.id] === opt ? 'border-blue-500' : 'border-gray-300'}`}>{answers[currentQ.id] === opt && <div className="w-3 h-3 bg-blue-500 rounded-full"></div>}</div>
+                                                <input type="radio" name={`q-${currentQ.id}`} className="hidden" onChange={() => handleAnswer(opt)} checked={answers[currentQ.id] === opt} /><span className="text-gray-700">{opt}</span>
                                             </label>
                                         ))}
                                     </div>
@@ -1004,30 +876,12 @@
                                     <textarea className="w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500" rows="6" placeholder="Ketik jawaban essay..." value={answers[currentQ.id] || ''} onChange={e => handleAnswer(e.target.value)}></textarea>
                                 )}
                             </div>
-
                             <div className="flex justify-between mt-8 pt-6 border-t">
-                                <button 
-                                    onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))} 
-                                    disabled={currentIdx === 0}
-                                    className="px-6 py-2 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-                                >
-                                    <i className="fas fa-arrow-left"></i> Sebelumnya
-                                </button>
-                                
+                                <button onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))} disabled={currentIdx === 0} className="px-6 py-2 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"><i className="fas fa-arrow-left"></i> Sebelumnya</button>
                                 {currentIdx < exam.questions.length - 1 ? (
-                                    <button 
-                                        onClick={() => setCurrentIdx(currentIdx + 1)} 
-                                        className="px-6 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                                    >
-                                        Selanjutnya <i className="fas fa-arrow-right"></i>
-                                    </button>
+                                    <button onClick={() => setCurrentIdx(currentIdx + 1)} className="px-6 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Selanjutnya <i className="fas fa-arrow-right"></i></button>
                                 ) : (
-                                    <button 
-                                        onClick={() => setViewMode('review')} 
-                                        className="px-6 py-2 rounded bg-yellow-500 text-white hover:bg-yellow-600"
-                                    >
-                                        Selesai / Review <i className="fas fa-list"></i>
-                                    </button>
+                                    <button onClick={() => setViewMode('review')} className="px-6 py-2 rounded bg-yellow-500 text-white hover:bg-yellow-600">Selesai / Review <i className="fas fa-list"></i></button>
                                 )}
                             </div>
                         </div>
@@ -1038,13 +892,7 @@
                             <h3 className="font-bold text-xl mb-4 text-center">Review Jawaban</h3>
                             <div className="grid grid-cols-4 md:grid-cols-5 gap-4 mb-8">
                                 {exam.questions.map((q, idx) => (
-                                    <button 
-                                        key={idx} 
-                                        onClick={() => { setCurrentIdx(idx); setViewMode('question'); }}
-                                        className={`p-4 rounded-lg border-2 font-bold text-lg ${answers[q.id] ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-400 border-gray-200'}`}
-                                    >
-                                        {idx + 1}
-                                    </button>
+                                    <button key={idx} onClick={() => { setCurrentIdx(idx); setViewMode('question'); }} className={`p-4 rounded-lg border-2 font-bold text-lg ${answers[q.id] ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-400 border-gray-200'}`}>{idx + 1}</button>
                                 ))}
                             </div>
                             <div className="flex justify-center gap-4">
@@ -1059,10 +907,7 @@
 
         // --- STUDENT DASHBOARD (MODIFIED WITH PERSISTENCE) ---
         const StudentDashboard = ({ user, setUser, students, setStudents, exams, results, setResults, handleLogout, settings }) => {
-            // Kunci sesi spesifik user
             const sessionKey = `smpn1_student_session_${user.nim}`;
-
-            // Inisialisasi state dari localStorage jika ada, agar tahan refresh
             const [activeScreen, setActiveScreen] = useState(() => localStorage.getItem(`${sessionKey}_screen`) || 'menu');
             const [selectedCategory, setSelectedCategory] = useState(() => localStorage.getItem(`${sessionKey}_cat`) || null);
             const [selectedExamId, setSelectedExamId] = useState(() => {
@@ -1070,27 +915,29 @@
                 return id ? parseInt(id) : null;
             });
 
-            // Simpan state ke localStorage setiap berubah
             useEffect(() => {
                 localStorage.setItem(`${sessionKey}_screen`, activeScreen);
                 if(selectedCategory) localStorage.setItem(`${sessionKey}_cat`, selectedCategory);
                 else localStorage.removeItem(`${sessionKey}_cat`);
-                
                 if(selectedExamId) localStorage.setItem(`${sessionKey}_examId`, selectedExamId);
                 else localStorage.removeItem(`${sessionKey}_examId`);
             }, [activeScreen, selectedCategory, selectedExamId]);
 
-            // Logout khusus untuk membersihkan sesi
             const onLogout = () => {
+                const sessions = JSON.parse(localStorage.getItem('smpn1_active_sessions') || '{}');
+                delete sessions[user.username];
+                localStorage.setItem('smpn1_active_sessions', JSON.stringify(sessions));
+                
                 localStorage.removeItem(`${sessionKey}_screen`);
                 localStorage.removeItem(`${sessionKey}_cat`);
                 localStorage.removeItem(`${sessionKey}_examId`);
-                handleLogout(); // Panggil logout global
+                handleLogout(); 
             };
 
             const isExamDone = (examId) => results.some(r => r.nim === user.nim && r.examId === examId);
 
             const startExam = (exam) => {
+                if(!exam.isStarted) return alert("Guru belum memulai ujian ini. Silakan tunggu.");
                 if(exam.questions.length === 0) return alert("Soal belum tersedia.");
                 setSelectedExamId(exam.id);
                 setActiveScreen('exam');
@@ -1126,12 +973,9 @@
             };
 
             const activeExamData = exams.find(e => e.id === selectedExamId);
-            
-            // Filter logic updated to include Class Check
             const filteredExams = exams.filter(e => {
                 const matchCategory = e.category === selectedCategory;
                 const matchYear = e.academicYear === settings.currentAcademicYear;
-                // Match class or show if no class set (backward compatibility)
                 const matchClass = e.className === user.className || !e.className; 
                 return matchCategory && matchYear && matchClass;
             });
@@ -1140,13 +984,8 @@
                 <div className="min-h-screen bg-gray-100 p-4">
                     <div className="max-w-5xl mx-auto space-y-6 fade-in">
                         <header className="bg-white p-6 rounded-xl shadow-sm flex justify-between items-center border-l-4 border-blue-600">
-                            <div>
-                                <h1 className="text-2xl font-bold text-gray-800">Halo, {user.name}</h1>
-                                <p className="text-gray-500">{user.nim} | {user.className}</p>
-                            </div>
-                            <button onClick={onLogout} className="text-red-600 hover:bg-red-50 px-4 py-2 rounded">
-                                <i className="fas fa-sign-out-alt"></i> Keluar
-                            </button>
+                            <div><h1 className="text-2xl font-bold text-gray-800">Halo, {user.name}</h1><p className="text-gray-500">{user.nim} | {user.className}</p></div>
+                            <button onClick={onLogout} className="text-red-600 hover:bg-red-50 px-4 py-2 rounded"><i className="fas fa-sign-out-alt"></i> Keluar</button>
                         </header>
                         <div className="grid md:grid-cols-3 gap-6">
                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1185,10 +1024,22 @@
                                             <h4 className="font-bold text-lg text-blue-900">{exam.subject}</h4>
                                             <p className="text-sm text-gray-600">{exam.teacher}</p>
                                             <div className="text-xs text-gray-500 mt-2">{exam.date} | {exam.start} - {exam.end}</div>
+                                            <div className="mt-2">
+                                                {exam.isStarted ? 
+                                                    <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded animate-pulse">● Sedang Berlangsung</span> : 
+                                                    <span className="text-xs font-bold text-red-500 bg-red-100 px-2 py-1 rounded">● Menunggu Guru</span>
+                                                }
+                                            </div>
                                         </div>
                                         <div>
                                             {isExamDone(exam.id) ? <span className="text-green-600 font-bold bg-green-50 px-3 py-1 rounded">Selesai</span> : 
-                                            <button onClick={() => startExam(exam)} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-blue-700">Mulai</button>}
+                                            <button 
+                                                onClick={() => startExam(exam)} 
+                                                disabled={!exam.isStarted}
+                                                className={`px-6 py-2 rounded-lg font-bold shadow transition ${exam.isStarted ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                                            >
+                                                Mulai
+                                            </button>}
                                         </div>
                                     </div>
                                 </div>
@@ -1201,20 +1052,17 @@
             if (activeScreen === 'exam' && activeExamData) {
                 return <ExamRunner exam={activeExamData} student={user} onFinish={onExamFinish} onCancel={() => setActiveScreen('category_list')} />;
             }
-            // Fallback jika data ujian hilang (misal dihapus guru saat siswa sedang ujian)
             return <div className="p-10 text-center">Data ujian tidak ditemukan. <button onClick={() => setActiveScreen('menu')} className="text-blue-600 underline">Kembali</button></div>;
         };
 
         function ExamApp() {
-            // --- STATE GLOBAL & STORAGE (PERSISTENCE) ---
-            // Inisialisasi view dan user dari localStorage agar tahan refresh
+            // --- STATE GLOBAL & STORAGE ---
             const [view, setView] = useState(() => localStorage.getItem('smpn1_app_view') || 'login'); 
             const [user, setUser] = useState(() => {
                 const u = localStorage.getItem('smpn1_app_user');
                 return u ? JSON.parse(u) : null;
             });
             
-            // App Settings
             const [settings, setSettings] = useState(() => {
                 const saved = localStorage.getItem('smpn1arahan_settings');
                 return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
@@ -1264,22 +1112,38 @@
                 e.preventDefault();
                 const { username, password } = loginInput;
 
+                // CHECK ACTIVE SESSION
+                const activeSessions = JSON.parse(localStorage.getItem('smpn1_active_sessions') || '{}');
+                if (activeSessions[username]) {
+                    alert("Akses Ditolak: Akun ini sedang login di perangkat lain.");
+                    return;
+                }
+
+                const createSession = (userData) => {
+                    activeSessions[username] = new Date().getTime();
+                    localStorage.setItem('smpn1_active_sessions', JSON.stringify(activeSessions));
+                    setUser(userData);
+                };
+
                 if (username === adminCreds.username && password === adminCreds.password) {
-                    setUser({ role: 'admin', name: 'Administrator' });
+                    const userData = { role: 'admin', name: 'Administrator', username: 'admin' };
+                    createSession(userData);
                     setView('adminDashboard');
                     return;
                 }
                 
                 const teacher = teachers.find(t => t.username === username && t.password === password);
                 if (teacher) {
-                    setUser({ role: 'teacher', ...teacher });
+                    const userData = { role: 'teacher', ...teacher };
+                    createSession(userData);
                     setView('teacherDashboard');
                     return;
                 }
 
                 const student = students.find(s => s.username === username && s.password === password);
                 if (student) {
-                    setUser({ role: 'student', ...student });
+                    const userData = { role: 'student', ...student };
+                    createSession(userData);
                     setView('studentDashboard');
                     return;
                 }
@@ -1288,10 +1152,16 @@
             };
 
             const handleLogout = () => {
+                // Clear Active Session
+                if (user) {
+                    const activeSessions = JSON.parse(localStorage.getItem('smpn1_active_sessions') || '{}');
+                    delete activeSessions[user.username];
+                    localStorage.setItem('smpn1_active_sessions', JSON.stringify(activeSessions));
+                }
+
                 setUser(null);
                 setLoginInput({ username: '', password: '' });
                 setView('login');
-                // Hapus sesi global saat logout eksplisit
                 localStorage.removeItem('smpn1_app_view');
                 localStorage.removeItem('smpn1_app_user');
             };
