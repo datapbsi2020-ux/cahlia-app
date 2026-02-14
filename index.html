@@ -94,8 +94,8 @@
         const LoginView = ({ handleLogin, loginInput, setLoginInput, settings }) => (
             <div className="min-h-screen flex flex-col bg-gray-100 app-bg" style={{ backgroundImage: settings.appBg ? `url(${settings.appBg})` : 'none' }}>
                 <div className="bg-blue-900 text-white py-3 shadow-md marquee-container no-print bg-opacity-90">
-                    <span className="marquee-text font-bold text-lg">
-                        SELAMAT DATANG DI APLIKASI UJIAN ONLINE {settings.appName} — PERIODE {settings.currentAcademicYear}
+                    <span className="marquee-text font-bold text-lg uppercase">
+                        SELAMAT DATANG DI APLIKASI UJIAN ONLINE
                     </span>
                 </div>
 
@@ -106,7 +106,6 @@
                                 <i className="fas fa-school text-4xl text-blue-600"></i>
                             </div>
                             <h2 className="text-2xl font-bold text-gray-800">Login Aplikasi</h2>
-                            <p className="text-gray-500 text-sm">{settings.appName}</p>
                         </div>
 
                         <form onSubmit={handleLogin} className="space-y-5">
