@@ -510,14 +510,6 @@
                 alert(`Berhasil import ${count} data.`);
             };
 
-            // Session Reset Logic
-            const resetAllSessions = () => {
-                if(confirm("Apakah Anda yakin ingin mereset semua sesi login? Pengguna yang sedang login mungkin perlu login ulang.")) {
-                    localStorage.removeItem('smpn1_active_sessions');
-                    alert("Semua sesi berhasil direset.");
-                }
-            };
-
             const addStudent = () => {
                 setStudents([...students, { ...newStudent, id: Date.now() }]);
                 setNewStudent({ name: '', nim: '', username: '', password: '', className: '', subject: '' });
@@ -558,10 +550,8 @@
                                     <div><label className="block text-sm font-bold text-gray-600 mb-1">Nama Aplikasi / Sekolah</label><input className="w-full border p-2 rounded" value={settings.appName} onChange={e => updateSettings('appName', e.target.value)} /></div>
                                     <div><label className="block text-sm font-bold text-gray-600 mb-1">URL Gambar Latar Belakang</label><input className="w-full border p-2 rounded" value={settings.appBg} onChange={e => updateSettings('appBg', e.target.value)} placeholder="https://example.com/image.jpg" /></div>
                                     <div><label className="block text-sm font-bold text-gray-600 mb-1">Periode Akademik Aktif (Backup/Filter)</label><select className="w-full border p-2 rounded" value={settings.currentAcademicYear} onChange={e => updateSettings('currentAcademicYear', e.target.value)}>{ACADEMIC_YEARS.map(yr => <option key={yr} value={yr}>{yr}</option>)}</select></div>
-                                    <div className="bg-red-50 p-4 rounded border border-red-200 mt-4">
-                                        <h4 className="font-bold text-red-800 mb-2">Zona Bahaya</h4>
-                                        <p className="text-xs text-red-600 mb-2">Gunakan jika ada pengguna yang terkunci karena error "Akun sedang digunakan".</p>
-                                        <button onClick={resetAllSessions} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm">Reset Semua Sesi Login</button>
+                                    <div className="bg-blue-50 p-3 rounded text-sm text-blue-800">
+                                        Pengaturan ini akan tersimpan otomatis dan mempengaruhi tampilan Login serta filter data.
                                     </div>
                                 </div>
                             </div>
@@ -924,10 +914,6 @@
             }, [activeScreen, selectedCategory, selectedExamId]);
 
             const onLogout = () => {
-                const sessions = JSON.parse(localStorage.getItem('smpn1_active_sessions') || '{}');
-                delete sessions[user.username];
-                localStorage.setItem('smpn1_active_sessions', JSON.stringify(sessions));
-                
                 localStorage.removeItem(`${sessionKey}_screen`);
                 localStorage.removeItem(`${sessionKey}_cat`);
                 localStorage.removeItem(`${sessionKey}_examId`);
@@ -1112,38 +1098,22 @@
                 e.preventDefault();
                 const { username, password } = loginInput;
 
-                // CHECK ACTIVE SESSION
-                const activeSessions = JSON.parse(localStorage.getItem('smpn1_active_sessions') || '{}');
-                if (activeSessions[username]) {
-                    alert("Akses Ditolak: Akun ini sedang login di perangkat lain.");
-                    return;
-                }
-
-                const createSession = (userData) => {
-                    activeSessions[username] = new Date().getTime();
-                    localStorage.setItem('smpn1_active_sessions', JSON.stringify(activeSessions));
-                    setUser(userData);
-                };
-
                 if (username === adminCreds.username && password === adminCreds.password) {
-                    const userData = { role: 'admin', name: 'Administrator', username: 'admin' };
-                    createSession(userData);
+                    setUser({ role: 'admin', name: 'Administrator' });
                     setView('adminDashboard');
                     return;
                 }
                 
                 const teacher = teachers.find(t => t.username === username && t.password === password);
                 if (teacher) {
-                    const userData = { role: 'teacher', ...teacher };
-                    createSession(userData);
+                    setUser({ role: 'teacher', ...teacher });
                     setView('teacherDashboard');
                     return;
                 }
 
                 const student = students.find(s => s.username === username && s.password === password);
                 if (student) {
-                    const userData = { role: 'student', ...student };
-                    createSession(userData);
+                    setUser({ role: 'student', ...student });
                     setView('studentDashboard');
                     return;
                 }
@@ -1152,16 +1122,10 @@
             };
 
             const handleLogout = () => {
-                // Clear Active Session
-                if (user) {
-                    const activeSessions = JSON.parse(localStorage.getItem('smpn1_active_sessions') || '{}');
-                    delete activeSessions[user.username];
-                    localStorage.setItem('smpn1_active_sessions', JSON.stringify(activeSessions));
-                }
-
                 setUser(null);
                 setLoginInput({ username: '', password: '' });
                 setView('login');
+                // Hapus sesi global saat logout eksplisit
                 localStorage.removeItem('smpn1_app_view');
                 localStorage.removeItem('smpn1_app_user');
             };
